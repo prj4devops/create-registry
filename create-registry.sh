@@ -1,21 +1,18 @@
 #!/bin/sh
+export store=/etc/docker/certs.d/192.168.1.10:8443
 openssl req -x509 -nodes -newkey rsa:4096 -keyout tls.key -out tls.crt -days 365 \
  -config tls.req -extensions v3_req
-
 yum -y install sshpass
-mkdir -p /etc/docker/certs.d/192.168.1.10:8443
-cp -f tls.crt /etc/docker/certs.d/192.168.1.10:8443
-sshpass -p vagrant ssh -o StrictHostKeyChecking=no root@w1-k8s \
-mkdir -p /etc/docker/certs.d/192.168.1.10:8443
-sshpass -p vagrant ssh -o StrictHostKeyChecking=no root@w2-k8s \
-mkdir -p /etc/docker/certs.d/192.168.1.10:8443
-sshpass -p vagrant ssh -o StrictHostKeyChecking=no root@w3-k8s \
-mkdir -p /etc/docker/certs.d/192.168.1.10:8443
-sshpass -p vagrant scp tls.crt w1-k8s:/etc/docker/certs.d/192.168.1.10:8443
-sshpass -p vagrant scp tls.crt w2-k8s:/etc/docker/certs.d/192.168.1.10:8443
-sshpass -p vagrant scp tls.crt w3-k8s:/etc/docker/certs.d/192.168.1.10:8443
+mkdir /data
+mkdir -p $store 
+cp -f tls.crt $store
 
-mkdir -p /data
+for i in {1..3}
+  do
+    sshpass -p vagrant ssh -o StrictHostKeyChecking=no root@w$i-k8s mkdir -p $store
+    sshpass -p vagrant scp tls.crt w$i-k8s:$store
+done
+
 docker run -d \
   --restart=always \
   --name registry \
